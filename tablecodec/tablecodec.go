@@ -71,6 +71,21 @@ func EncodeRowKeyWithHandle(tableID int64, handle int64) kv.Key {
 
 // DecodeRecordKey decodes the key and gets the tableID, handle.
 func DecodeRecordKey(key kv.Key) (tableID int64, handle int64, err error) {
+	if len(key) != RecordRowKeyLen {
+		return 0, 0, errInvalidRecordKey
+	}
+
+	var isRecordKey bool
+	tableID, _, isRecordKey, err = DecodeKeyHead(key)
+	if err != nil {
+		return
+	}
+	if !isRecordKey {
+		err = errInvalidRecordKey.GenWithStack("invalid key - %q", key)
+		return
+	}
+	handle, _ = DecodeRowKey(key)
+	return
 	/* Project 1-2: your code here
 	 * DecodeRecordKey decodes the key and gets the tableID, handle.
 	 * Decode is actually the reverse of encoding, so you can refer to EncodeRowKeyWithHandle.
@@ -98,7 +113,6 @@ func DecodeRecordKey(key kv.Key) (tableID int64, handle int64, err error) {
 	 *   5. understanding the coding rules is a prerequisite for implementing this function,
 	 *      you can learn it in the projection 1-2 course documentation.
 	 */
-	return
 }
 
 // appendTableIndexPrefix appends table index prefix  "t[tableID]_i".
@@ -120,6 +134,19 @@ func EncodeIndexSeekKey(tableID int64, idxID int64, encodedValue []byte) kv.Key 
 
 // DecodeIndexKeyPrefix decodes the key and gets the tableID, indexID, indexValues.
 func DecodeIndexKeyPrefix(key kv.Key) (tableID int64, indexID int64, indexValues []byte, err error) {
+
+	var isRecordKey bool
+	tableID, _, isRecordKey, err = DecodeKeyHead(key)
+	if err != nil {
+		err = errInvalidKey.GenWithStack("invalid key - %q", key)
+		return
+	}
+	if isRecordKey {
+		err = errInvalidKey.GenWithStack("invalid key - %q", key)
+		return
+	}
+	indexValues = CutIndexPrefix(key)
+	return tableID, indexID, indexValues, nil
 	/* Project 1-2: your code here
 	 * DecodeIndexKeyPrefix decodes the key and gets the tableID, indexID, indexValues.
 	 * Decode is actually the reverse of encoding, so you can refer to EncodeIndexSeekKey.
@@ -148,7 +175,6 @@ func DecodeIndexKeyPrefix(key kv.Key) (tableID int64, indexID int64, indexValues
 	 *   5. understanding the coding rules is a prerequisite for implementing this function,
 	 *      you can learn it in the projection 1-2 course documentation.
 	 */
-	return tableID, indexID, indexValues, nil
 }
 
 // DecodeIndexKey decodes the key and gets the tableID, indexID, indexValues.
