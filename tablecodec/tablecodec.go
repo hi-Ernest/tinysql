@@ -136,7 +136,7 @@ func EncodeIndexSeekKey(tableID int64, idxID int64, encodedValue []byte) kv.Key 
 func DecodeIndexKeyPrefix(key kv.Key) (tableID int64, indexID int64, indexValues []byte, err error) {
 
 	var isRecordKey bool
-	tableID, _, isRecordKey, err = DecodeKeyHead(key)
+	tableID, indexID, isRecordKey, err = DecodeKeyHead(key)
 	if err != nil {
 		err = errInvalidKey.GenWithStack("invalid key - %q", key)
 		return
